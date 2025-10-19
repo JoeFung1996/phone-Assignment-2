@@ -56,14 +56,16 @@
             <ion-input id="username" placeholder="使用者名稱"></ion-input>
             <ion-input id="password" type="password" placeholder="密碼"></ion-input>
             <ion-button id="signup">註冊</ion-button>
-            <ion-button id="login">登入</ion-button>
-            <ion-button id="logout">登出</ion-button>
+            <ion-button id="login" style="display: none;">登入</ion-button>
+            <ion-button id="logout" style="display: none;">登出</ion-button>
         </ion-content>
     </ion-app>
 
     <script>
         let searchbar = document.querySelector('ion-searchbar');
         let list = document.querySelector('ion-list');
+        let loginButton = document.getElementById('login');
+        let logoutButton = document.getElementById('logout');
         let template = document.createElement('ion-item');
         template.classList.add('list-item');
         template.innerHTML = `
@@ -82,6 +84,16 @@
         let currentPage = 1;
         const limit = 5;
         let token = '';
+
+        function updateAuthButtons() {
+            if (token) {
+                loginButton.style.display = 'none';
+                logoutButton.style.display = 'inline-block';
+            } else {
+                loginButton.style.display = 'inline-block';
+                logoutButton.style.display = 'none';
+            }
+        }
 
         async function updateList() {
             list.innerHTML = '';
@@ -189,7 +201,8 @@
                 token = data.token;
                 alert('註冊成功');
                 updateList();
-                clearInputs(); // 清空输入框
+                clearInputs();
+                updateAuthButtons(); // 更新按钮状态
             } catch (error) {
                 console.error('Error during signup:', error);
                 alert('註冊失敗: ' + error.message);
@@ -212,7 +225,8 @@
                 token = data.token;
                 alert('登入成功');
                 updateList();
-                clearInputs(); // 清空输入框
+                clearInputs();
+                updateAuthButtons(); // 更新按钮状态
             } catch (error) {
                 console.error('Error during login:', error);
                 alert('登入失敗: ' + error.message);
@@ -228,6 +242,7 @@
             token = '';
             alert('已登出');
             updateList();
+            updateAuthButtons(); // 更新按钮状态
         }
 
         searchbar.addEventListener('ionInput', () => {
@@ -252,6 +267,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             updateList(); // 初始加载所有课程
+            updateAuthButtons(); // 更新按钮状态
         });
     </script>
 </body>
