@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>主題清單</title>
+    <!-- Ionic CDN -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <script nomodule src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #87CEEB; /* 天蓝色背景 */
+        color: black; /* 设置字体颜色为黑色 */
+      }
+      .list-item {
+        background-color: #800080; /* 紫色背景 */
+        border-radius: 10px; /* 圆角边框 */
+        padding: 1rem; /* 内边距 */
+        margin: 0.5rem 0; /* 外边距 */
+      }
+      .item-content {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .item-title {
+        font-weight: bold;
+        margin: 0.25rem 0;
+        color: rgb(17, 16, 16); /* 标题颜色为白色 */
+      }
+      .item-subtitle {
+        color: #e20808; /* 较浅的颜色 */
+        font-size: 0.9em;
+      }
+      .tag-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+      }
+      .category-button {
+        margin: 0.2rem;
+      }
+      /* 媒体查询 */
+      @media (max-width: 320px) { .item-title { font-size: 1em; } }
+      @media (max-width: 375px) { .item-title { font-size: 1.1em; } }
+      @media (max-width: 360px) { .item-content { flex-direction: column; } }
+      @media (max-width: 412px) { .item-title { font-size: 1.2em; } }
+      @media (max-width: 428px) { .item-title { font-size: 1.3em; } }
+    </style>
+</head>
+<body>
+    <ion-app>
+        <ion-header>
+            <ion-toolbar>
+                <ion-title>主題清單</ion-title>
+            </ion-toolbar>
+            <ion-searchbar placeholder="搜尋..."></ion-searchbar>
+        </ion-header>
+
+        <ion-content>
+            <div>
+                <!-- 分類按鈕 -->
+                <ion-button class="category-button" id="all" fill="outline">全部</ion-button>
+                <ion-button class="category-button" id="Python" fill="outline">Python</ion-button>
+                <ion-button class="category-button" id="JavaScript" fill="outline">JavaScript</ion-button>
+                <ion-button class="category-button" id="Java" fill="outline">Java</ion-button>
+                <ion-button class="category-button" id="C#" fill="outline">C#</ion-button>
+                <!-- 根據主題加入其他分類按鈕 -->
+            </div>
+            <ion-list>
+                <ion-item class="list-item">
+                    <div class="item-content">
+                        <div>
+                            <div class="item-title">項目名稱</div>
+                            <div class="item-subtitle">項目類別</div>
+                            <div class="item-details"></div>
+                            <div class="item-point"></div>
+                            <div class="tag-container">
+                                <!-- 標籤 -->
+                            </div>
+                        </div>
+                    </div>
+                </ion-item>
+            </ion-list>
+        </ion-content>
+    </ion-app>
+    <script>
+        let searchbar = document.querySelector('ion-searchbar');
+        let list = document.querySelector('ion-list');
+        let template = document.querySelector('.list-item');
+
+        // 初始化資料
+        let items = [
+            { id: 1, username: 'Python入門', ProgrammingLanguage: 'Python', level: '初級', KeyPoint: '基本結構' },
+            { id: 2, username: '網頁開發基礎', ProgrammingLanguage: 'JavaScript', level: '初級', KeyPoint: '樣式設計' },
+            { id: 3, username: '資料科學與分析', ProgrammingLanguage: 'Python', level: '中級', KeyPoint: '資料處理' },
+            { id: 4, username: '機器學習入門', ProgrammingLanguage: 'Python', level: '中級', KeyPoint: '模型訓練' },
+            { id: 5, username: '移動應用開發', ProgrammingLanguage: 'Java', level: '中級', KeyPoint: '應用介面設計' },
+            { id: 6, username: '遊戲開發基礎', ProgrammingLanguage: 'C#', level: '初級', KeyPoint: '遊戲設計原則' },
+            { id: 7, username: '全棧開發入門', ProgrammingLanguage: 'JavaScript', level: '中級', KeyPoint: '資料庫操作' },
+            { id: 8, username: '嵌入式系統程式設計', ProgrammingLanguage: 'C', level: '中級', KeyPoint: '硬體介面' },
+            { id: 9, username: '網路安全基礎', ProgrammingLanguage: 'Python', level: '中級', KeyPoint: '加密技術' },
+            { id: 10, username: '自動化腳本編寫', ProgrammingLanguage: 'Python', level: '初級', KeyPoint: '自動化任務' },
+            { id: 11, username: '資料庫設計與管理', ProgrammingLanguage: 'SQL', level: '初級', KeyPoint: '基本查詢' },
+            { id: 12, username: '前端框架入門', ProgrammingLanguage: 'JavaScript', level: '中級', KeyPoint: '元件化開發' },
+            { id: 13, username: '區塊鏈技術概論', ProgrammingLanguage: 'Solidity', level: '初級', KeyPoint: '智能合約' },
+            { id: 14, username: '虛擬現實開發', ProgrammingLanguage: 'C#', level: '初級', KeyPoint: '模型導入' },
+            { id: 15, username: '雲計算基礎', ProgrammingLanguage: 'Python', level: '中級', KeyPoint: '資料存儲' },
+            { id: 16, username: 'API開發與整合', ProgrammingLanguage: 'Python', level: '中級', KeyPoint: '資料格式' },
+            { id: 17, username: '演算法與資料結構', ProgrammingLanguage: 'Python', level: '中級', KeyPoint: '基本演算法' },
+            { id: 18, username: 'DevOps基礎', ProgrammingLanguage: 'Python', level: '中級', KeyPoint: '自動化部署' },
+            { id: 19, username: '大資料處理', ProgrammingLanguage: 'Python', level: '中級', KeyPoint: '資料分析' },
+            { id: 20, username: '自然語言處理', ProgrammingLanguage: 'Python', level: '中級', KeyPoint: '模型訓練' }
+        ];
+
+        // 更新清單顯示
+        function updateList(selectedCategory) {
+            list.innerHTML = ''; // 清空清單
+
+            for (let item of items) {
+                let matchesSearch = !searchbar.value ||
+                    item.username.toLowerCase().includes(searchbar.value.toLowerCase()) ||
+                    item.ProgrammingLanguage.toLowerCase().includes(searchbar.value.toLowerCase()) ||
+                    item.level.toLowerCase().includes(searchbar.value.toLowerCase()) ||
+                    item.KeyPoint.toLowerCase().includes(searchbar.value.toLowerCase());
+
+                let matchesCategory = !selectedCategory || item.ProgrammingLanguage === selectedCategory;
+
+                if (matchesSearch && matchesCategory) {
+                    let node = template.cloneNode(true);
+                    node.querySelector('.item-title').textContent = item.username;
+                    node.querySelector('.item-subtitle').textContent = item.ProgrammingLanguage;
+                    node.querySelector('.item-details').textContent = item.level;
+                    node.querySelector('.item-point').textContent = item.KeyPoint;
+                    list.appendChild(node);
+                }
+            }
+        }
+
+        // 更新清單
+        updateList();
+
+        searchbar.addEventListener('ionInput', event => {
+            updateList();
+        });
+
+        // 監聽分類按鈕點擊事件
+        document.querySelectorAll('.category-button').forEach(button => {
+            button.addEventListener('click', () => {
+                let selectedCategory = button.id === 'all' ? '' : button.id;
+                updateList(selectedCategory);
+                // 標記選擇的按鈕
+                document.querySelectorAll('.category-button').forEach(btn => {
+                    btn.fill = btn.id === selectedCategory ? 'solid' : 'outline';
+                });
+            });
+        });
+    </script>
+</body>
+</html>
