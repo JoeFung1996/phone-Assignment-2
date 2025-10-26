@@ -162,6 +162,10 @@
             font-weight: 500;
         }
 
+        .auth-section {
+            padding: 1rem;
+        }
+
         @media (max-width: 360px) {
             .item-content {
                 flex-direction: column;
@@ -191,13 +195,17 @@
         <ion-content>
             <ion-list></ion-list>
 
-            <ion-item>
-                <ion-input id="username" placeholder="使用者名稱"></ion-input>
-                <ion-input id="password" type="password" placeholder="密碼"></ion-input>
-            </ion-item>
-            <ion-button id="signup">註冊</ion-button>
-            <ion-button id="login" style="display: none;">登入</ion-button>
-            <ion-button id="logout" style="display: none;">登出</ion-button>
+            <div class="auth-section">
+                <ion-item id="auth-inputs">
+                    <ion-input id="username" placeholder="使用者名稱"></ion-input>
+                    <ion-input id="password" type="password" placeholder="密碼"></ion-input>
+                </ion-item>
+                <div style="margin-top: 0.5rem;">
+                    <ion-button id="signup">註冊</ion-button>
+                    <ion-button id="login">登入</ion-button>
+                    <ion-button id="logout" style="display: none;">登出</ion-button>
+                </div>
+            </div>
         </ion-content>
     </ion-app>
 
@@ -206,6 +214,8 @@
         let list = document.querySelector('ion-list');
         let loginButton = document.getElementById('login');
         let logoutButton = document.getElementById('logout');
+        let signupButton = document.getElementById('signup');
+        let authInputs = document.getElementById('auth-inputs');
         let template = document.createElement('ion-item');
         template.classList.add('list-item');
         template.innerHTML = `
@@ -241,10 +251,16 @@
 
         function updateAuthButtons() {
             if (token) {
+                // 已登入：隐藏登入和註冊按钮，显示登出按钮，隐藏输入框
                 loginButton.style.display = 'none';
+                signupButton.style.display = 'none';
+                authInputs.style.display = 'none';
                 logoutButton.style.display = 'inline-block';
             } else {
+                // 未登入：显示登入和註冊按钮，隐藏登出按钮，显示输入框
                 loginButton.style.display = 'inline-block';
+                signupButton.style.display = 'inline-block';
+                authInputs.style.display = 'block';
                 logoutButton.style.display = 'none';
             }
         }
@@ -490,6 +506,18 @@
 
         document.getElementById('logout').addEventListener('click', () => {
             logout();
+        });
+
+        // 支持深色模式
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
         });
 
         document.addEventListener('DOMContentLoaded', () => {
