@@ -1,51 +1,182 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8" >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" >
     <title>主題清單</title>
     <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
     <script nomodule src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" >
     <style>
+        :root {
+            --gradient-start: #667eea;
+            --gradient-middle: #764ba2;
+            --gradient-end: #f093fb;
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --card-shadow: rgba(0, 0, 0, 0.1);
+            --text-primary: #2d3748;
+            --text-secondary: #4a5568;
+            --accent-color: #667eea;
+        }
+
+        html.dark {
+            --gradient-start: #1a202c;
+            --gradient-middle: #2d3748;
+            --gradient-end: #4a5568;
+            --card-bg: rgba(45, 55, 72, 0.95);
+            --card-shadow: rgba(0, 0, 0, 0.3);
+            --text-primary: #e2e8f0;
+            --text-secondary: #cbd5e0;
+            --accent-color: #90cdf4;
+        }
+
         body {
             margin: 0;
             padding: 0;
-            background-color: #87CEEB;
-            color: black;
+            background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-middle) 50%, var(--gradient-end) 100%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            min-height: 100vh;
         }
+
+        /* 添加动画背景效果 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        ion-app {
+            background: transparent;
+        }
+
+        ion-content {
+            --background: transparent;
+        }
+
         .list-item {
-            background-color: #800080;
-            border-radius: 10px;
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
             padding: 1rem;
             margin: 0.5rem 0;
             display: flex;
             align-items: center;
+            box-shadow: 0 8px 32px var(--card-shadow);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
+
+        .list-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px var(--card-shadow);
+        }
+
         .item-content {
             display: flex;
             align-items: center;
             flex-wrap: wrap;
+            width: 100%;
         }
+
         .item-title {
             font-weight: bold;
             margin: 0.25rem 0;
-            color: rgb(17, 16, 16);
+            color: var(--text-primary);
+            font-size: 1.1em;
         }
+
         .item-subtitle {
-            color: #e20808;
+            color: var(--accent-color);
             font-size: 0.9em;
+            font-weight: 500;
         }
+
+        .item-details {
+            color: var(--text-secondary);
+            font-size: 0.85em;
+            margin: 0.25rem 0;
+        }
+
+        .item-point {
+            color: var(--text-secondary);
+            font-size: 0.85em;
+        }
+
         .item-image {
             width: 100px;
             height: 100px;
             object-fit: cover;
-            border-radius: 5px;
+            border-radius: 12px;
             margin-right: 1rem;
-            background: #fff;
+            background: #f0f0f0;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
-        @media (max-width: 360px) { .item-content { flex-direction: column; } }
-        @media (max-width: 428px) { .item-title { font-size: 1.3em; } }
+
+        .image-loading {
+            opacity: 0.6;
+        }
+
+        ion-header {
+            backdrop-filter: blur(10px);
+        }
+
+        ion-toolbar {
+            --background: rgba(255, 255, 255, 0.8);
+            --border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        html.dark ion-toolbar {
+            --background: rgba(45, 55, 72, 0.8);
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        ion-title {
+            --color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        ion-searchbar {
+            --background: rgba(255, 255, 255, 0.9);
+            --border-radius: 12px;
+            --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        html.dark ion-searchbar {
+            --background: rgba(45, 55, 72, 0.9);
+            --color: #e2e8f0;
+            --placeholder-color: #a0aec0;
+        }
+
+        ion-button {
+            --border-radius: 10px;
+            font-weight: 500;
+        }
+
+        @media (max-width: 360px) {
+            .item-content {
+                flex-direction: column;
+            }
+            .item-image {
+                margin-right: 0;
+                margin-bottom: 0.5rem;
+            }
+        }
+
+        @media (max-width: 428px) {
+            .item-title {
+                font-size: 1.3em;
+            }
+        }
     </style>
 </head>
 <body>
@@ -78,22 +209,35 @@
         let template = document.createElement('ion-item');
         template.classList.add('list-item');
         template.innerHTML = `
-            <img class="item-image" src="" alt="課程圖片" />
+            <img class="item-image image-loading" src="" alt="課程圖片" />
             <div class="item-content">
-                <div>
+                <div style="flex: 1;">
                     <div class="item-title"></div>
                     <div class="item-subtitle"></div>
                     <div class="item-details"></div>
                     <div class="item-point"></div>
                 </div>
-                <ion-button class="bookmark-button" fill="outline">收藏</ion-button>
-                <ion-button class="unbookmark-button" fill="outline" style="display:none;">取消收藏</ion-button>
+                <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                    <ion-button class="bookmark-button" fill="outline" size="small">收藏</ion-button>
+                    <ion-button class="unbookmark-button" fill="outline" size="small" style="display:none;">取消收藏</ion-button>
+                </div>
             </div>
         `;
 
         let currentPage = 1;
         const limit = 5;
         let token = '';
+
+        // 自定義通知函數替代alert
+        async function showToast(message, duration = 2000, color = 'primary') {
+            const toast = document.createElement('ion-toast');
+            toast.message = message;
+            toast.duration = duration;
+            toast.color = color;
+            toast.position = 'top';
+            document.body.appendChild(toast);
+            await toast.present();
+        }
 
         function updateAuthButtons() {
             if (token) {
@@ -102,6 +246,53 @@
             } else {
                 loginButton.style.display = 'inline-block';
                 logoutButton.style.display = 'none';
+            }
+        }
+
+        // 創建一個簡單的占位SVG作為data URI
+        function getPlaceholderImage(text = 'Loading') {
+            const svg = `<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg">
+                <rect width="100" height="100" fill="#e0e0e0"/>
+                <text x="50%" y="50%" font-family="Arial" font-size="12" fill="#999" text-anchor="middle" dy=".3em">${text}</text>
+            </svg>`;
+            return 'data:image/svg+xml;base64,' + btoa(svg);
+        }
+
+        async function loadImageWithAuth(imageUrl, imgElement, courseId) {
+            // 先設置占位圖
+            imgElement.src = getPlaceholderImage('載入中');
+            imgElement.classList.add('image-loading');
+
+            try {
+                // 嘗試使用授權獲取圖片
+                const headers = {};
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+
+                const response = await fetch(imageUrl, {
+                    headers: headers,
+                    mode: 'cors'
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const objectUrl = URL.createObjectURL(blob);
+                    imgElement.src = objectUrl;
+                    imgElement.classList.remove('image-loading');
+
+                    // 清理 blob URL
+                    imgElement.onload = () => {
+                        URL.revokeObjectURL(objectUrl);
+                    };
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                console.error(`Error loading image for course ${courseId}:`, error);
+                // 如果加載失敗，顯示錯誤占位圖
+                imgElement.src = getPlaceholderImage('無圖片');
+                imgElement.classList.remove('image-loading');
             }
         }
 
@@ -121,33 +312,12 @@
                 let node = template.cloneNode(true);
                 const imgElement = node.querySelector('.item-image');
 
-                // placeholder + onerror fallback
-                imgElement.src = 'https://via.placeholder.com/100x100?text=Loading';
-                imgElement.alt = item.title || '課程圖片';
-                imgElement.onerror = () => {
-                    imgElement.src = 'https://via.placeholder.com/100x100?text=No+Image';
-                };
-
-                // 若需授權(token)，使用 fetch 取得 blob 再顯示；否則直接用 URL
-                if (token) {
-                    try {
-                        const resp = await fetch(item.image, {
-                            headers: { 'Authorization': `Bearer ${token}` }
-                        });
-                        if (resp.ok) {
-                            const blob = await resp.blob();
-                            const objectUrl = URL.createObjectURL(blob);
-                            imgElement.src = objectUrl;
-                            imgElement.onload = () => URL.revokeObjectURL(objectUrl);
-                        } else {
-                            // 若無存取權限或錯誤，嘗試直接設置 URL（或保留占位圖）
-                            imgElement.src = item.image || 'https://via.placeholder.com/100x100?text=No+Image';
-                        }
-                    } catch (err) {
-                        imgElement.src = item.image || 'https://via.placeholder.com/100x100?text=No+Image';
-                    }
+                // 異步加載圖片
+                if (item.image) {
+                    loadImageWithAuth(item.image, imgElement, item.id);
                 } else {
-                    imgElement.src = item.image || 'https://via.placeholder.com/100x100?text=No+Image';
+                    imgElement.src = getPlaceholderImage('無圖片');
+                    imgElement.classList.remove('image-loading');
                 }
 
                 node.querySelector('.item-title').textContent = item.title || '';
@@ -179,7 +349,7 @@
                 if (!response.ok) throw new Error('網路錯誤，無法載入資料');
                 const data = await response.json();
 
-                // 为每个课程项目添加图片URL (保留其他欄位)
+                // 為每個課程項目添加圖片URL
                 const coursesWithImages = (data.items || []).map(item => ({
                     ...item,
                     image: `https://dae-mobile-assignment.hkit.cc/api/courses/${item.id}/image`
@@ -188,14 +358,14 @@
                 return coursesWithImages;
             } catch (error) {
                 console.error('Error fetching courses:', error);
-                alert('載入資料時出現錯誤: ' + error.message);
+                showToast('載入資料時出現錯誤: ' + error.message, 3000, 'danger');
                 return [];
             }
         }
 
         async function toggleBookmark(itemId, isBookmark) {
             if (!token) {
-                alert('請先登入以操作收藏');
+                showToast('請先登入以操作收藏', 2000, 'warning');
                 return;
             }
             const method = isBookmark ? 'POST' : 'DELETE';
@@ -210,11 +380,11 @@
                     }
                 });
                 const data = await response.json();
-                alert(data.message || '操作完成');
+                showToast(data.message || '操作完成', 2000, 'success');
                 updateList();
             } catch (error) {
                 console.error('Error toggling bookmark:', error);
-                alert('操作收藏時出現錯誤: ' + error.message);
+                showToast('操作收藏時出現錯誤: ' + error.message, 3000, 'danger');
             }
         }
 
@@ -242,7 +412,7 @@
 
         async function signup(username, password) {
             if (!validateInput(username) || !validateInput(password)) {
-                alert('使用者名稱和密碼只能包含字母和數字。');
+                showToast('使用者名稱和密碼只能包含字母和數字。', 2000, 'warning');
                 return;
             }
             try {
@@ -253,19 +423,19 @@
                 });
                 const data = await response.json();
                 token = data.token || '';
-                alert('註冊成功');
+                showToast('註冊成功', 2000, 'success');
                 updateList();
                 clearInputs();
                 updateAuthButtons();
             } catch (error) {
                 console.error('Error during signup:', error);
-                alert('註冊失敗: ' + error.message);
+                showToast('註冊失敗: ' + error.message, 3000, 'danger');
             }
         }
 
         async function login(username, password) {
             if (!validateInput(username) || !validateInput(password)) {
-                alert('使用者名稱和密碼只能包含字母和數字。');
+                showToast('使用者名稱和密碼只能包含字母和數字。', 2000, 'warning');
                 return;
             }
             try {
@@ -276,13 +446,13 @@
                 });
                 const data = await response.json();
                 token = data.token || '';
-                alert('登入成功');
+                showToast('登入成功', 2000, 'success');
                 updateList();
                 clearInputs();
                 updateAuthButtons();
             } catch (error) {
                 console.error('Error during login:', error);
-                alert('登入失敗: ' + error.message);
+                showToast('登入失敗: ' + error.message, 3000, 'danger');
             }
         }
 
@@ -295,7 +465,7 @@
 
         function logout() {
             token = '';
-            alert('已登出');
+            showToast('已登出', 2000, 'success');
             updateList();
             updateAuthButtons();
         }
