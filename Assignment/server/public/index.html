@@ -37,15 +37,14 @@
             font-size: 0.9em;
         }
         .item-image {
-            width: 100px; /* 根据需要调整图片大小 */
-            height: auto;
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
             border-radius: 5px;
             margin-right: 1rem;
+            background: #fff;
         }
-        @media (max-width: 320px) { .item-title { font-size: 1em; } }
-        @media (max-width: 375px) { .item-title { font-size: 1.1em; } }
         @media (max-width: 360px) { .item-content { flex-direction: column; } }
-        @media (max-width: 412px) { .item-title { font-size: 1.2em; } }
         @media (max-width: 428px) { .item-title { font-size: 1.3em; } }
     </style>
 </head>
@@ -55,14 +54,16 @@
             <ion-toolbar>
                 <ion-title>主題清單</ion-title>
             </ion-toolbar>
-            <ion-searchbar placeholder="搜尋..."></ion-searchbar>
+            <ion-searchbar placeholder="搜尋..." debounce="300"></ion-searchbar>
         </ion-header>
 
         <ion-content>
             <ion-list></ion-list>
 
-            <ion-input id="username" placeholder="使用者名稱"></ion-input>
-            <ion-input id="password" type="password" placeholder="密碼"></ion-input>
+            <ion-item>
+                <ion-input id="username" placeholder="使用者名稱"></ion-input>
+                <ion-input id="password" type="password" placeholder="密碼"></ion-input>
+            </ion-item>
             <ion-button id="signup">註冊</ion-button>
             <ion-button id="login" style="display: none;">登入</ion-button>
             <ion-button id="logout" style="display: none;">登出</ion-button>
@@ -106,22 +107,53 @@
 
         async function updateList() {
             list.innerHTML = '';
-            const searchQuery = searchbar.value.toLowerCase();
+            const searchQuery = (searchbar && searchbar.value) ? searchbar.value.toLowerCase() : '';
             const courses = await loadCourses(currentPage, searchQuery);
 
-            if (courses.length === 0) {
+            if (!courses || courses.length === 0) {
                 let noItem = document.createElement('ion-item');
                 noItem.textContent = '沒有找到任何項目';
                 list.appendChild(noItem);
+                return;
             }
 
             for (let item of courses) {
                 let node = template.cloneNode(true);
-                node.querySelector('.item-image').src = item.image; // 假设课程对象有一个image属性
-                node.querySelector('.item-title').textContent = item.title;
-                node.querySelector('.item-subtitle').textContent = item.category;
-                node.querySelector('.item-details').textContent = item.level;
-                node.querySelector('.item-point').textContent = item.description;
+                const imgElement = node.querySelector('.item-image');
+
+                // placeholder + onerror fallback
+                imgElement.src = 'https://via.placeholder.com/100x100?text=Loading';
+                imgElement.alt = item.title || '課程圖片';
+                imgElement.onerror = () => {
+                    imgElement.src = 'https://via.placeholder.com/100x100?text=No+Image';
+                };
+
+                // 若需授權(token)，使用 fetch 取得 blob 再顯示；否則直接用 URL
+                if (token) {
+                    try {
+                        const resp = await fetch(item.image, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        if (resp.ok) {
+                            const blob = await resp.blob();
+                            const objectUrl = URL.createObjectURL(blob);
+                            imgElement.src = objectUrl;
+                            imgElement.onload = () => URL.revokeObjectURL(objectUrl);
+                        } else {
+                            // 若無存取權限或錯誤，嘗試直接設置 URL（或保留占位圖）
+                            imgElement.src = item.image || 'https://via.placeholder.com/100x100?text=No+Image';
+                        }
+                    } catch (err) {
+                        imgElement.src = item.image || 'https://via.placeholder.com/100x100?text=No+Image';
+                    }
+                } else {
+                    imgElement.src = item.image || 'https://via.placeholder.com/100x100?text=No+Image';
+                }
+
+                node.querySelector('.item-title').textContent = item.title || '';
+                node.querySelector('.item-subtitle').textContent = item.category || '';
+                node.querySelector('.item-details').textContent = item.level || '';
+                node.querySelector('.item-point').textContent = item.description || '';
 
                 const bookmarked = await isBookmarked(item.id);
                 if (bookmarked) {
@@ -140,27 +172,32 @@
                 list.appendChild(node);
             }
         }
-async function loadCourses(page = 1, search = '') {
-    try {
-        const response = await fetch(`https://dae-mobile-assignment.hkit.cc/api/courses?page=${page}&limit=${limit}&search=${search}`);
-        if (!response.ok) throw new Error('網路錯誤，無法載入資料');
-        const data = await response.json();
-        
-        // 为每个课程项目添加图片URL
-        const coursesWithImages = data.items.map(item => ({
-            ...item,
-            image: `https://dae-mobile-assignment.hkit.cc/api/courses/${item.id}/image`
-        }));
-        
-        return coursesWithImages;
-    } catch (error) {
-        console.error('Error fetching courses:', error);
-        alert('載入資料時出現錯誤: ' + error.message);
-        return [];
-    }
-}
+
+        async function loadCourses(page = 1, search = '') {
+            try {
+                const response = await fetch(`https://dae-mobile-assignment.hkit.cc/api/courses?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`);
+                if (!response.ok) throw new Error('網路錯誤，無法載入資料');
+                const data = await response.json();
+
+                // 为每个课程项目添加图片URL (保留其他欄位)
+                const coursesWithImages = (data.items || []).map(item => ({
+                    ...item,
+                    image: `https://dae-mobile-assignment.hkit.cc/api/courses/${item.id}/image`
+                }));
+
+                return coursesWithImages;
+            } catch (error) {
+                console.error('Error fetching courses:', error);
+                alert('載入資料時出現錯誤: ' + error.message);
+                return [];
+            }
+        }
 
         async function toggleBookmark(itemId, isBookmark) {
+            if (!token) {
+                alert('請先登入以操作收藏');
+                return;
+            }
             const method = isBookmark ? 'POST' : 'DELETE';
             const url = `https://dae-mobile-assignment.hkit.cc/api/bookmarks/${itemId}`;
 
@@ -173,7 +210,7 @@ async function loadCourses(page = 1, search = '') {
                     }
                 });
                 const data = await response.json();
-                alert(data.message);
+                alert(data.message || '操作完成');
                 updateList();
             } catch (error) {
                 console.error('Error toggling bookmark:', error);
@@ -182,14 +219,16 @@ async function loadCourses(page = 1, search = '') {
         }
 
         async function isBookmarked(itemId) {
+            if (!token) return false;
             try {
                 const response = await fetch(`https://dae-mobile-assignment.hkit.cc/api/bookmarks`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
                 });
+                if (!response.ok) return false;
                 const data = await response.json();
-                return data.item_ids.includes(itemId);
+                return Array.isArray(data.item_ids) && data.item_ids.includes(itemId);
             } catch (error) {
                 console.error('Error checking bookmark status:', error);
                 return false;
@@ -197,7 +236,7 @@ async function loadCourses(page = 1, search = '') {
         }
 
         function validateInput(input) {
-            const regex = /^[a-zA-Z0-9]+$/;  // 只允许字母和数字
+            const regex = /^[a-zA-Z0-9]+$/;
             return regex.test(input);
         }
 
@@ -206,7 +245,6 @@ async function loadCourses(page = 1, search = '') {
                 alert('使用者名稱和密碼只能包含字母和數字。');
                 return;
             }
-
             try {
                 const response = await fetch('https://dae-mobile-assignment.hkit.cc/api/auth/signup', {
                     method: 'POST',
@@ -214,11 +252,11 @@ async function loadCourses(page = 1, search = '') {
                     body: JSON.stringify({ username, password })
                 });
                 const data = await response.json();
-                token = data.token;
+                token = data.token || '';
                 alert('註冊成功');
                 updateList();
                 clearInputs();
-                updateAuthButtons(); // 更新按钮状态
+                updateAuthButtons();
             } catch (error) {
                 console.error('Error during signup:', error);
                 alert('註冊失敗: ' + error.message);
@@ -230,7 +268,6 @@ async function loadCourses(page = 1, search = '') {
                 alert('使用者名稱和密碼只能包含字母和數字。');
                 return;
             }
-
             try {
                 const response = await fetch('https://dae-mobile-assignment.hkit.cc/api/auth/login', {
                     method: 'POST',
@@ -238,11 +275,11 @@ async function loadCourses(page = 1, search = '') {
                     body: JSON.stringify({ username, password })
                 });
                 const data = await response.json();
-                token = data.token;
+                token = data.token || '';
                 alert('登入成功');
                 updateList();
                 clearInputs();
-                updateAuthButtons(); // 更新按钮状态
+                updateAuthButtons();
             } catch (error) {
                 console.error('Error during login:', error);
                 alert('登入失敗: ' + error.message);
@@ -250,20 +287,24 @@ async function loadCourses(page = 1, search = '') {
         }
 
         function clearInputs() {
-            document.getElementById('username').value = '';
-            document.getElementById('password').value = '';
+            const u = document.getElementById('username');
+            const p = document.getElementById('password');
+            if (u) u.value = '';
+            if (p) p.value = '';
         }
 
         function logout() {
             token = '';
             alert('已登出');
             updateList();
-            updateAuthButtons(); // 更新按钮状态
+            updateAuthButtons();
         }
 
-        searchbar.addEventListener('ionInput', () => {
-            updateList();
-        });
+        if (searchbar) {
+            searchbar.addEventListener('ionInput', () => {
+                updateList();
+            });
+        }
 
         document.getElementById('signup').addEventListener('click', () => {
             const username = document.getElementById('username').value;
@@ -282,8 +323,8 @@ async function loadCourses(page = 1, search = '') {
         });
 
         document.addEventListener('DOMContentLoaded', () => {
-            updateList(); // 初始加载所有课程
-            updateAuthButtons(); // 更新按钮状态
+            updateList();
+            updateAuthButtons();
         });
     </script>
 </body>
