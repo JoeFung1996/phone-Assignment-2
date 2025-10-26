@@ -166,6 +166,52 @@
             padding: 1rem;
         }
 
+        .pagination-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        .page-info {
+            font-size: 1rem;
+            color: var(--text-primary);
+            font-weight: 500;
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .loading-indicator {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(102, 126, 234, 0.2);
+            border-top-color: var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .end-message {
+            text-align: center;
+            padding: 1.5rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-style: italic;
+        }
+
         @media (max-width: 360px) {
             .item-content {
                 flex-direction: column;
@@ -192,8 +238,31 @@
             <ion-searchbar placeholder="搜尋..." debounce="300"></ion-searchbar>
         </ion-header>
 
-        <ion-content>
+        <ion-content id="main-content">
             <ion-list></ion-list>
+
+            <div id="loading-indicator" class="loading-indicator" style="display: none;">
+                <div class="loading-spinner"></div>
+                <p>載入中...</p>
+            </div>
+
+            <div id="end-message" class="end-message" style="display: none;">
+                已經到底了，沒有更多內容
+            </div>
+
+            <div class="pagination-controls">
+                <ion-button id="prev-page" fill="outline" disabled>
+                    <ion-icon slot="start" name="chevron-back-outline"></ion-icon>
+                    上一頁
+                </ion-button>
+                <div class="page-info">
+                    第 <span id="current-page">1</span> 頁
+                </div>
+                <ion-button id="next-page" fill="outline">
+                    下一頁
+                    <ion-icon slot="end" name="chevron-forward-outline"></ion-icon>
+                </ion-button>
+            </div>
 
             <div class="auth-section">
                 <ion-item id="auth-inputs">
@@ -237,6 +306,10 @@
         let currentPage = 1;
         const limit = 5;
         let token = '';
+        let isLoading = false;
+        let hasMorePages = true;
+        let totalPages = 9;
+        let isInfiniteScrollEnabled = true;
 
         // 自定義通知函數替代alert
         async function showToast(message, duration = 2000, color = 'primary') {
@@ -312,19 +385,41 @@
             }
         }
 
-        async function updateList() {
-            list.innerHTML = '';
-            const searchQuery = (searchbar && searchbar.value) ? searchbar.value.toLowerCase() : '';
-            const courses = await loadCourses(currentPage, searchQuery);
+        async function updateList(append = false) {
+            if (isLoading) return;
+            isLoading = true;
 
-            if (!courses || courses.length === 0) {
-                let noItem = document.createElement('ion-item');
-                noItem.textContent = '沒有找到任何項目';
-                list.appendChild(noItem);
+            // 显示加载指示器
+            const loadingIndicator = document.getElementById('loading-indicator');
+            loadingIndicator.style.display = 'block';
+
+            if (!append) {
+                list.innerHTML = '';
+            }
+
+            const searchQuery = (searchbar && searchbar.value) ? searchbar.value.toLowerCase() : '';
+            const result = await loadCourses(currentPage, searchQuery);
+
+            // 隐藏加载指示器
+            loadingIndicator.style.display = 'none';
+            isLoading = false;
+
+            if (!result || !result.courses || result.courses.length === 0) {
+                if (!append) {
+                    let noItem = document.createElement('ion-item');
+                    noItem.textContent = '沒有找到任何項目';
+                    list.appendChild(noItem);
+                }
+                hasMorePages = false;
+                updatePaginationButtons();
+                document.getElementById('end-message').style.display = append ? 'block' : 'none';
                 return;
             }
 
-            for (let item of courses) {
+            hasMorePages = result.hasMore;
+            totalPages = result.totalPages;
+
+            for (let item of result.courses) {
                 let node = template.cloneNode(true);
                 const imgElement = node.querySelector('.item-image');
 
@@ -357,6 +452,31 @@
 
                 list.appendChild(node);
             }
+
+            updatePaginationButtons();
+            document.getElementById('end-message').style.display = hasMorePages ? 'none' : 'block';
+        }
+
+        function updatePaginationButtons() {
+            const prevButton = document.getElementById('prev-page');
+            const nextButton = document.getElementById('next-page');
+            const currentPageSpan = document.getElementById('current-page');
+
+            currentPageSpan.textContent = currentPage;
+
+            // 更新上一页按钮状态
+            if (currentPage <= 1) {
+                prevButton.setAttribute('disabled', 'true');
+            } else {
+                prevButton.removeAttribute('disabled');
+            }
+
+            // 更新下一页按钮状态
+            if (!hasMorePages) {
+                nextButton.setAttribute('disabled', 'true');
+            } else {
+                nextButton.removeAttribute('disabled');
+            }
         }
 
         async function loadCourses(page = 1, search = '') {
@@ -371,11 +491,26 @@
                     image: `https://dae-mobile-assignment.hkit.cc/api/courses/${item.id}/image`
                 }));
 
-                return coursesWithImages;
+                // 计算是否还有更多页
+                const totalItems = data.total || 10;
+                const totalPages = Math.ceil(totalItems / limit);
+                const hasMore = page < totalPages;
+
+                return {
+                    courses: coursesWithImages,
+                    hasMore: hasMore,
+                    totalPages: totalPages,
+                    total: totalItems
+                };
             } catch (error) {
                 console.error('Error fetching courses:', error);
                 showToast('載入資料時出現錯誤: ' + error.message, 3000, 'danger');
-                return [];
+                return {
+                    courses: [],
+                    hasMore: false,
+                    totalPages: 10,
+                    total: 90
+                };
             }
         }
 
@@ -486,11 +621,50 @@
             updateAuthButtons();
         }
 
+        // 搜索功能
         if (searchbar) {
             searchbar.addEventListener('ionInput', () => {
-                updateList();
+                currentPage = 1;
+                hasMorePages = true;
+                updateList(false);
             });
         }
+
+        // 分页按钮事件
+        document.getElementById('prev-page').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                updateList(false);
+                // 滚动到顶部
+                document.getElementById('main-content').scrollToTop(300);
+            }
+        });
+
+        document.getElementById('next-page').addEventListener('click', () => {
+            if (hasMorePages) {
+                currentPage++;
+                updateList(false);
+                // 滚动到顶部
+                document.getElementById('main-content').scrollToTop(300);
+            }
+        });
+
+        // 无限滚动功能
+        const content = document.getElementById('main-content');
+        content.addEventListener('ionScroll', async (event) => {
+            if (!isInfiniteScrollEnabled || !hasMorePages || isLoading) return;
+
+            const scrollElement = await event.target.getScrollElement();
+            const scrollTop = scrollElement.scrollTop;
+            const scrollHeight = scrollElement.scrollHeight;
+            const clientHeight = scrollElement.clientHeight;
+
+            // 当滚���到距离底部200px时加载下一页
+            if (scrollTop + clientHeight >= scrollHeight - 200) {
+                currentPage++;
+                updateList(true);
+            }
+        });
 
         document.getElementById('signup').addEventListener('click', () => {
             const username = document.getElementById('username').value;
